@@ -1,0 +1,81 @@
+@import "tailwindcss";
+@import "leaflet/dist/leaflet.css";
+
+:root {
+  --bg: #05080a;
+  --panel: #0b1114;
+  --line: #1c2a2e;
+  --fg: #cfe8dc;
+  --dim: #6b8a80;
+  --accent: #39ff88;
+  --danger: #ff3b3b;
+  --warn: #ffb020;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-panel: var(--panel);
+  --color-line: var(--line);
+  --color-fg: var(--fg);
+  --color-dim: var(--dim);
+  --color-accent: var(--accent);
+  --color-danger: var(--danger);
+  --color-warn: var(--warn);
+  --font-mono: ui-monospace, "Cascadia Mono", "SF Mono", Menlo, Consolas, monospace;
+}
+
+html, body { height: 100%; }
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-mono);
+  background-image: linear-gradient(rgba(57,255,136,.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(57,255,136,.03) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+.hud-corner { position: absolute; width: 22px; height: 22px; pointer-events: none; z-index: 1000; }
+.hud-corner.tl { top: 8px; left: 8px; border-top: 2px solid var(--accent); border-left: 2px solid var(--accent); }
+.hud-corner.tr { top: 8px; right: 8px; border-top: 2px solid var(--accent); border-right: 2px solid var(--accent); }
+.hud-corner.bl { bottom: 8px; left: 8px; border-bottom: 2px solid var(--danger); border-left: 2px solid var(--danger); }
+.hud-corner.br { bottom: 8px; right: 8px; border-bottom: 2px solid var(--danger); border-right: 2px solid var(--danger); }
+
+.radar-sweep {
+  position: absolute; inset: 50% auto auto 50%;
+  width: 140vmax; height: 140vmax; margin: -70vmax 0 0 -70vmax;
+  background: conic-gradient(from 0deg, rgba(57,255,136,.28), rgba(57,255,136,0) 18%, rgba(57,255,136,0) 100%);
+  border-radius: 50%;
+  animation: sweep 5s linear infinite;
+  pointer-events: none; z-index: 900; mix-blend-mode: screen;
+}
+@keyframes sweep { to { transform: rotate(360deg); } }
+
+.hud-grid {
+  position: absolute; inset: 0; pointer-events: none; z-index: 901;
+  background:
+    linear-gradient(var(--accent) 0 0) center / 1px 100% no-repeat,
+    linear-gradient(var(--accent) 0 0) center / 100% 1px no-repeat,
+    radial-gradient(circle, transparent 24%, rgba(57,255,136,.25) 24.3%, transparent 24.8%, transparent 49%, rgba(57,255,136,.2) 49.3%, transparent 49.8%, transparent 74%, rgba(57,255,136,.15) 74.3%, transparent 74.8%);
+  opacity: .35;
+}
+
+.pulse-marker {
+  width: 16px; height: 16px; border-radius: 50%;
+  background: var(--accent); box-shadow: 0 0 0 0 rgba(57,255,136,.7);
+  animation: pulse 1.6s infinite;
+}
+.pulse-marker.admin { background: var(--warn); box-shadow: 0 0 0 0 rgba(255,176,32,.7); }
+.pulse-marker.quake { background: var(--danger); animation-name: pulse-red; }
+@keyframes pulse { 70% { box-shadow: 0 0 0 16px rgba(57,255,136,0); } 100% { box-shadow: 0 0 0 0 rgba(57,255,136,0); } }
+@keyframes pulse-red { 70% { box-shadow: 0 0 0 18px rgba(255,59,59,0); } 100% { box-shadow: 0 0 0 0 rgba(255,59,59,0); } }
+
+.tx-banner { animation: txflash 1s ease-in-out infinite; }
+@keyframes txflash { 50% { background-color: rgba(255,59,59,.35); } }
+.alert-flash { animation: alertflash .8s steps(2) infinite; }
+@keyframes alertflash { 50% { background-color: rgba(255,59,59,.5); } }
+.ticker { animation: ticker 45s linear infinite; white-space: nowrap; }
+@keyframes ticker { from { transform: translateX(100%); } to { transform: translateX(-100%); } }
+
+.leaflet-container { background: #05080a; font-family: var(--font-mono); }
+.leaflet-div-icon { background: transparent; border: 0; }
+.leaflet-popup-content-wrapper, .leaflet-popup-tip { background: var(--panel); color: var(--fg); border: 1px solid var(--line); border-radius: 2px; }
