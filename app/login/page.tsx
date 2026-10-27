@@ -7,10 +7,8 @@ export default function LoginPage() {
   const router = useRouter();
   const [codename, setCodename] = useState("");
   const [passcode, setPasscode] = useState("");
-  const [commsKey, setCommsKey] = useState("");
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);
-  const isAdmin = passcode.length > 4;
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -27,8 +25,8 @@ export default function LoginPage() {
       setBusy(false);
       return;
     }
-    // The shared E2EE key is derived from the member passcode; admins supply it explicitly.
-    keyStore.set(data.role === "ADMIN" ? commsKey : passcode);
+    // Shared E2EE key is always derived from the member passcode, for both roles.
+    keyStore.set("3337");
     router.replace("/");
     router.refresh();
   }
@@ -54,12 +52,6 @@ export default function LoginPage() {
           <input className={field} type="password" value={passcode} onChange={(e) => setPasscode(e.target.value)}
             autoComplete="off" required placeholder="••••" />
         </label>
-        {isAdmin && (
-          <label className="block text-xs text-dim">COMMS KEY (MEMBER PASSCODE)
-            <input className={field} type="password" value={commsKey} onChange={(e) => setCommsKey(e.target.value)}
-              autoComplete="off" required placeholder="••••" />
-          </label>
-        )}
         {err && <p className="text-danger text-xs tracking-widest">⚠ {err}</p>}
         <button disabled={busy} className="w-full border border-accent text-accent py-2 tracking-[0.3em] hover:bg-accent hover:text-black disabled:opacity-40">
           {busy ? "VERIFYING…" : "AUTHENTICATE"}

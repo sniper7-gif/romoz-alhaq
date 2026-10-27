@@ -95,7 +95,8 @@ export default function Console({ session }: { session: Session }) {
     async (rows: Row[], live: boolean) => {
       const out: Msg[] = [];
       for (const r of rows) {
-        if (seen.current.has(r.id)) continue;
+        if (!r?.id || seen.current.has(r.id)) continue;
+        if (!r.audio_url && (!r.cipher_text || !r.iv)) continue;
         seen.current.add(r.id);
         lastRef.current = r.created_at;
         let m: Msg;
@@ -135,7 +136,9 @@ export default function Console({ session }: { session: Session }) {
 
   const pull = useCallback(async () => {
     const res = await fetch(lastRef.current ? `/api/messages?after=${encodeURIComponent(lastRef.current)}` : "/api/messages");
-    if (res.ok) await ingest(await res.json(), !!lastRef.current);
+    if (!res.ok) return;
+    const rows = await res.json().catch(() => null);
+    if (Array.isArray(rows)) await ingest(rows, !!lastRef.current);
   }, [ingest]);
 
   // Activation: unlock audio, derive key, join realtime.
@@ -231,7 +234,9 @@ export default function Console({ session }: { session: Session }) {
     const load = async () => {
       const res = await fetch("/api/locations");
       if (!res.ok) return;
-      const rows: MemberPos[] = await res.json();
+      const json = await res.json().catch(() => null);
+      if (!Array.isArray(json)) return;
+      const rows: MemberPos[] = json;
       setMembers((m) => ({ ...m, ...Object.fromEntries(rows.map((r) => [r.user_codename, r])) }));
     };
     void load();
@@ -429,15 +434,18 @@ export default function Console({ session }: { session: Session }) {
 
 function Feed({ msgs, me }: { msgs: Msg[]; me: string }) {
   const end = useRef<HTMLDivElement>(null);
-  useEffect(() => end.current?.scrollIntoView({ behavior: "smooth" }), [msgs.length]);
+  const list = Array.isArray(msgs) ? msgs : [];
+  useEffect(() => {
+    end.current?.scrollIntoView({ behavior: "smooth" });
+  }, [list.length]);
   return (
     <div className="flex-1 min-h-0 overflow-auto p-3 space-y-2 text-sm">
-      {msgs.map((m) => (
+      {list.map((m) => (
         <div key={m.id} className={`max-w-[85%] border px-3 py-1.5 ${m.sender_codename === me ? "ml-auto border-accent/40" : "border-line"} ${m.kind === "alert" ? "border-danger text-danger" : ""}`}>
           <p className="text-[10px] text-dim">
-            {m.sender_codename} · {m.role} · {new Date(m.created_at).toLocaleTimeString()}
+            {m.sender_codename} · {m.role} · {m.created_at ? new Date(m.created_at).toLocaleTimeString() : ""}
           </p>
-          {m.kind === "voice" ? <VoiceClip path={m.audio_url!} /> : <p dir="auto" className="break-words">{m.text}</p>}
+          {m.kind === "voice" && m.audio_url ? <VoiceClip path={m.audio_url} /> : <p dir="auto" className="break-words">{m.text}</p>}
         </div>
       ))}
       <div ref={end} />
