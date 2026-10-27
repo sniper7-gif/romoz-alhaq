@@ -13,7 +13,7 @@ const MAX_AGE = 60 * 60 * 12;
 
 // Fallback keeps login working if AUTH_JWT_SECRET is unset. It is public in the repo:
 // set AUTH_JWT_SECRET in production, otherwise session cookies can be forged.
-const FALLBACK_SECRET = "romoz-alhaq-fallback-secret-change-me-0123456789";
+const FALLBACK_SECRET = "romoz-alhaq-ultra-secret-tactical-key-2026-x99";
 const secret = () => {
   const s = process.env.AUTH_JWT_SECRET;
   if (!s || s.length < 32) console.warn("AUTH_JWT_SECRET missing or short; using insecure fallback");
