@@ -1,23 +1,28 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { COOKIE_NAME, verifyToken } from "@/lib/auth";
 
-const PUBLIC = ["/login", "/api/auth/login"];
+// Gate 1 = access code (session with empty codename). Gate 2 = member login (full session).
+const OPEN = ["/login", "/api/auth/gate", "/api/auth/logout"];
+const GATE2 = ["/login/member", "/api/auth/member"];
 
 export async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
   const session = await verifyToken(req.cookies.get(COOKIE_NAME)?.value);
+  const redirect = (to: string) => NextResponse.redirect(new URL(to, req.url));
+  const deny = () =>
+    pathname.startsWith("/api/") ? NextResponse.json({ error: "UNAUTHORIZED" }, { status: 401 }) : redirect("/login");
 
-  if (!session && !PUBLIC.includes(pathname)) {
-    if (pathname.startsWith("/api/")) return NextResponse.json({ error: "UNAUTHORIZED" }, { status: 401 });
-    return NextResponse.redirect(new URL("/login", req.url));
+  if (!session) return OPEN.includes(pathname) ? NextResponse.next() : deny();
+
+  if (!session.codename) {
+    if (OPEN.includes(pathname) || GATE2.includes(pathname)) return NextResponse.next();
+    return pathname.startsWith("/api/") ? deny() : redirect("/login/member");
   }
-  if (session && pathname === "/login") return NextResponse.redirect(new URL("/", req.url));
-  if (session && session.role !== "ADMIN" && pathname.startsWith("/radar")) {
-    return NextResponse.redirect(new URL("/", req.url));
-  }
+
+  if (pathname === "/login" || pathname === "/login/member") return redirect("/");
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|sw.js|.*\\.(?:svg|png|jpg|ico)$).*)"],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|sw.js|.*\.(?:svg|png|jpg|jpeg|webp|ico)$).*)"],
 };

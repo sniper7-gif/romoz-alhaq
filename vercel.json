@@ -4,7 +4,6 @@
   "installCommand": "pnpm install --frozen-lockfile",
   "buildCommand": "pnpm build",
   "functions": {
-    "app/api/voice/route.ts": { "maxDuration": 30 },
     "app/api/**/route.ts": { "maxDuration": 15 }
   },
   "headers": [
@@ -14,7 +13,7 @@
         { "key": "X-Content-Type-Options", "value": "nosniff" },
         { "key": "X-Frame-Options", "value": "DENY" },
         { "key": "Referrer-Policy", "value": "no-referrer" },
-        { "key": "Permissions-Policy", "value": "microphone=(self), geolocation=(self), camera=()" }
+        { "key": "Permissions-Policy", "value": "microphone=(), geolocation=(), camera=()" }
       ]
     },
     {

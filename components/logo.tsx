@@ -1,0 +1,34 @@
+"use client";
+import Image from "next/image";
+import { useState } from "react";
+
+const SRC = { hood: "/logo-hood.png", eagle: "/logo-eagle.png" } as const;
+
+/** Official brand marks. Drop the files at public/logo-hood.png and public/logo-eagle.png. */
+export default function Logo({ kind, size, className = "" }: { kind: keyof typeof SRC; size: number; className?: string }) {
+  const [missing, setMissing] = useState(false);
+  if (missing) {
+    return (
+      <div
+        style={{ width: size, height: size }}
+        className={`grid place-items-center border border-accent/60 text-accent/70 text-[10px] tracking-widest ${className}`}
+        role="img"
+        aria-label={kind}
+      >
+        {kind.toUpperCase()}
+      </div>
+    );
+  }
+  return (
+    <Image
+      src={SRC[kind]}
+      alt={kind === "eagle" ? "Symbols of Truth eagle emblem" : "Symbols of Truth hood emblem"}
+      width={size}
+      height={size}
+      priority
+      unoptimized
+      onError={() => setMissing(true)}
+      className={`object-contain drop-shadow-[0_0_14px_rgba(0,255,65,.55)] ${className}`}
+    />
+  );
+}
