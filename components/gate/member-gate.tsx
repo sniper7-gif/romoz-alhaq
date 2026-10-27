@@ -67,10 +67,10 @@ export default function MemberGate() {
   return (
     <GateShell leaving={leaving}>
       <div className="mb-5 flex justify-center">
-        <Logo kind="hood" size={150} />
+        <Logo kind="hood" size={190} />
       </div>
-      <h1 className="glow text-center text-xl tracking-[0.2em]">{t("appName")}</h1>
-      <p className="mt-1 text-center text-[11px] tracking-widest text-dim">{t("memberGate")}</p>
+      <h1 className="glow text-center text-3xl font-bold tracking-[0.35em]" dir="ltr">L.I.S</h1>
+      <p className="mt-1 text-center text-sm tracking-widest text-accent/80">{t("memberGate")}</p>
 
       <div className="mt-5 grid grid-cols-2 border border-line" role="tablist">
         {(["login", "register"] as const).map((m) => (

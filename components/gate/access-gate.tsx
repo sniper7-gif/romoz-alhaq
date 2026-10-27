@@ -45,27 +45,28 @@ export default function AccessGate() {
   return (
     <GateShell leaving={phase === "granted"}>
       <div className="mb-5 flex justify-center">
-        <Logo kind="eagle" size={150} />
+        <Logo kind="eagle" size={190} />
       </div>
-      <h1 className="glow text-center text-xl tracking-[0.2em]">{t("appName")}</h1>
-      <p className="mt-1 text-center text-[11px] tracking-widest text-dim">{t("gateTitle")}</p>
+      <h1 className="glow text-center text-3xl font-bold tracking-[0.35em]" dir="ltr">L.I.S</h1>
+      <p className="mt-1 text-center text-sm tracking-widest text-accent/80">{t("gateTitle")}</p>
 
-      <div className="mt-5 space-y-0.5 text-[11px] text-dim" dir="ltr" aria-hidden>
-        <p>{t("boot1")}</p>
-        <p>{t("boot2")}</p>
-        <p className="caret text-accent">{t("boot3")}</p>
-      </div>
+      <ul className="mt-5 space-y-1 text-xs text-dim" aria-hidden>
+        {(["boot1", "boot2", "boot3"] as const).map((k, i) => (
+          <li key={k} className="fade-in" style={{ animationDelay: `${i * 450}ms` }}>
+            <span className="text-accent">{">"}</span> {t(k)}
+          </li>
+        ))}
+      </ul>
 
       <form onSubmit={submit} className="mt-6 space-y-4" noValidate>
-        <label className="block">
-          <span className="mb-1 block text-[11px] tracking-widest text-dim">{t("gateHint")}</span>
+        <label className="flex items-center border bg-black/70 focus-within:border-accent has-[[aria-invalid=true]]:border-danger border-line" dir="ltr">
+          <span className="px-4 text-xl text-accent" aria-hidden>$</span>
           <input
             key={phase === "denied" ? "shake" : "ok"}
             type="password"
             inputMode="numeric"
             autoComplete="off"
             autoFocus
-            dir="ltr"
             value={code}
             onChange={(e) => {
               setCode(e.target.value.replace(/\D/g, "").slice(0, 16));
@@ -73,10 +74,8 @@ export default function AccessGate() {
             }}
             aria-label={t("accessCode")}
             aria-invalid={phase === "denied"}
-            placeholder="••••"
-            className={`w-full border bg-black/70 px-4 py-3 text-center text-2xl tracking-[0.5em] text-accent outline-none focus:border-accent ${
-              phase === "denied" ? "shake border-danger" : "border-line"
-            }`}
+            placeholder={t("gateHint")}
+            className={`w-full bg-transparent py-3 pe-4 text-lg tracking-[0.3em] text-accent outline-none placeholder:text-xs placeholder:tracking-widest placeholder:text-dim/60 ${phase === "denied" ? "shake" : ""}`}
           />
         </label>
         <button

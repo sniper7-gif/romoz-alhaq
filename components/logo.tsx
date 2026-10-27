@@ -11,7 +11,7 @@ export default function Logo({ kind, size, className = "" }: { kind: keyof typeo
     return (
       <div
         style={{ width: size, height: size }}
-        className={`grid place-items-center border border-accent/60 text-accent/70 text-[10px] tracking-widest ${className}`}
+        className={`grid place-items-center rounded-full border border-accent/60 text-accent/70 text-[10px] tracking-widest ${className}`}
         role="img"
         aria-label={kind}
       >
@@ -28,7 +28,7 @@ export default function Logo({ kind, size, className = "" }: { kind: keyof typeo
       priority
       unoptimized
       onError={() => setMissing(true)}
-      className={`object-contain drop-shadow-[0_0_14px_rgba(0,255,65,.55)] ${className}`}
+      className={`rounded-full object-contain shadow-[0_0_40px_rgba(0,255,65,.45)] ${className}`}
     />
   );
 }
