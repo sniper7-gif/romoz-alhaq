@@ -30,7 +30,8 @@ interface Online {
   role: "ADMIN" | "MEMBER";
 }
 
-type Tab = "comms" | "radar" | "monitor";
+type Tab = "comms" | "intel" | "radar" | "broadcast" | "agents";
+const ROLE_LABEL = { ADMIN: "OFFICER", MEMBER: "AGENT" } as const;
 const CHANNEL = "rah-comms";
 
 export default function Console({ session }: { session: Session }) {
@@ -44,6 +45,9 @@ export default function Console({ session }: { session: Session }) {
   const [members, setMembers] = useState<Record<string, MemberPos>>({});
   const [alert, setAlert] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
+  const [bdraft, setBdraft] = useState("");
+  const [drawer, setDrawer] = useState(false);
+  const [locked, setLocked] = useState<string | null>(null);
   const [transmitting, setTransmitting] = useState(false);
   const [error, setError] = useState("");
   const { quakes, status: quakeStatus } = useQuakes();
@@ -253,9 +257,10 @@ export default function Console({ session }: { session: Session }) {
   }
 
   async function sendText(t: "chat" | "alert") {
-    const text = draft.trim();
+    const text = (t === "alert" ? bdraft : draft).trim();
     if (!text) return;
-    setDraft("");
+    if (t === "alert") setBdraft("");
+    else setDraft("");
     try {
       await postMessage(await sealed({ t, text }));
     } catch (e) {
@@ -337,7 +342,7 @@ export default function Console({ session }: { session: Session }) {
           <span className="hud-corner tl" /><span className="hud-corner br" />
           <p className="text-xs text-dim">OPERATOR</p>
           <p className="text-xl text-accent">{session.codename}</p>
-          <p className="text-xs text-warn tracking-widest">CLEARANCE: {session.role}</p>
+          <p className="text-xs text-warn tracking-widest">CLEARANCE: {ROLE_LABEL[session.role]} · {isAdmin ? "COMMAND CENTER" : "SOLDIER PORTAL"}</p>
           <button onClick={activate} className="w-full border border-accent text-accent py-3 tracking-[0.25em] hover:bg-accent hover:text-black">
             ACTIVATE TACTICAL COMMS
           </button>
@@ -348,7 +353,14 @@ export default function Console({ session }: { session: Session }) {
   }
 
   const talking = Object.keys(talkers).filter((c) => c !== session.codename);
-  const tabs: [Tab, string][] = [["comms", "COMMS"], ...(isAdmin ? ([["radar", "GOD EYES"]] as [Tab, string][]) : []), ["monitor", "WORLD MONITOR"]];
+  const tabs: [Tab, string][] = isAdmin
+    ? [["comms", "COMMS"], ["radar", "GOD EYES"], ["intel", "INTEL"], ["broadcast", "BROADCAST"], ["agents", "AGENTS"]]
+    : [["comms", "COMMS"], ["intel", "INTEL"]];
+  const pick = (k: Tab) => {
+    setTab(k);
+    setDrawer(false);
+  };
+  const memberList = Object.values(members).filter((m) => m && typeof m.lat === "number");
 
   return (
     <div className="h-screen flex flex-col">
@@ -364,20 +376,33 @@ export default function Console({ session }: { session: Session }) {
       ))}
       <header className="flex items-center justify-between border-b border-line bg-panel px-3 py-2 text-xs">
         <div className="flex items-center gap-3">
-          <span className="text-accent" dir="auto">رموز الحق</span>
-          <nav className="flex gap-1">
+          <button aria-label="Menu" onClick={() => setDrawer(true)} className="md:hidden border border-line px-2 py-1 text-accent">☰</button>
+          <span className="text-accent glow" dir="auto">L.I.S // رموز الحق</span>
+          <nav className="hidden md:flex gap-1">
             {tabs.map(([k, l]) => (
-              <button key={k} onClick={() => setTab(k)}
+              <button key={k} onClick={() => pick(k)}
                 className={`px-3 py-1 border ${tab === k ? "border-accent text-accent" : "border-line text-dim"}`}>{l}</button>
             ))}
           </nav>
         </div>
         <div className="flex items-center gap-3">
           <span className="text-dim hidden sm:inline">{online.length} ONLINE</span>
-          <span className="text-warn">{session.codename} [{session.role}]</span>
+          <span className="text-warn">{session.codename} [{ROLE_LABEL[session.role]}]</span>
           <button onClick={logout} className="border border-line px-2 py-1 text-dim hover:text-danger">EXIT</button>
         </div>
       </header>
+      {drawer && (
+        <div className="fixed inset-0 z-[2000] md:hidden" onClick={() => setDrawer(false)}>
+          <div className="absolute inset-0 bg-black/70" />
+          <aside className="absolute left-0 top-0 h-full w-64 bg-panel border-r border-accent/40 p-4 space-y-2" onClick={(e) => e.stopPropagation()}>
+            <p className="text-accent glow mb-4">{isAdmin ? "COMMAND CENTER" : "SOLDIER PORTAL"}</p>
+            {tabs.map(([k, l]) => (
+              <button key={k} onClick={() => pick(k)}
+                className={`block w-full text-left px-3 py-2 border ${tab === k ? "border-accent text-accent" : "border-line text-dim"}`}>{l}</button>
+            ))}
+          </aside>
+        </div>
+      )}
       {error && (
         <button onClick={() => setError("")} className="bg-danger/20 text-danger text-xs py-1 text-left px-3">⚠ {error} (dismiss)</button>
       )}
@@ -393,9 +418,6 @@ export default function Console({ session }: { session: Session }) {
                     placeholder="ENCRYPTED MESSAGE…"
                     className="flex-1 bg-black/60 border border-line px-3 py-2 text-sm outline-none focus:border-accent" />
                   <button onClick={() => sendText("chat")} className="border border-accent text-accent px-4 text-sm">SEND</button>
-                  {isAdmin && (
-                    <button onClick={() => sendText("alert")} className="border border-danger text-danger px-3 text-sm">ALERT</button>
-                  )}
                 </div>
                 <button
                   onPointerDown={(e) => { e.currentTarget.setPointerCapture(e.pointerId); void startPTT(); }}
@@ -414,17 +436,50 @@ export default function Console({ session }: { session: Session }) {
               {online.map((o) => (
                 <p key={o.codename} className="flex justify-between">
                   <span className={talkers[o.codename] ? "text-danger" : "text-accent"}>● {o.codename}</span>
-                  <span className="text-dim">{o.role}</span>
+                  <span className="text-dim">{ROLE_LABEL[o.role] ?? o.role}</span>
                 </p>
               ))}
             </aside>
           </div>
         )}
         {tab === "radar" && isAdmin && (
-          <RadarMap members={Object.values(members)} online={online} quakes={quakes} />
+          <RadarMap members={memberList} online={online} quakes={quakes} locked={locked} onLock={setLocked} />
         )}
-        {tab === "monitor" && (
+        {tab === "intel" && (
           <WorldMonitor quakes={quakes} status={quakeStatus} alerts={msgs.filter((m) => m.kind === "alert")} />
+        )}
+        {tab === "broadcast" && isAdmin && (
+          <div className="p-4 max-w-xl space-y-3">
+            <h2 className="text-xs text-dim tracking-widest">GLOBAL BROADCAST — FLASHES RED ON ALL SCREENS</h2>
+            <textarea value={bdraft} onChange={(e) => setBdraft(e.target.value)} maxLength={500} rows={4}
+              placeholder="COMMAND ALERT TEXT…" className="w-full bg-black/60 border border-line p-3 text-sm outline-none focus:border-danger" />
+            <button onClick={() => sendText("alert")} className="border border-danger text-danger px-6 py-2 tracking-widest hover:bg-danger hover:text-black">
+              TRANSMIT ALERT
+            </button>
+          </div>
+        )}
+        {tab === "agents" && isAdmin && (
+          <div className="p-4 space-y-2 text-xs overflow-auto h-full">
+            <h2 className="text-dim tracking-widest">AGENT SUPERVISION</h2>
+            {online.filter((o) => o.role === "MEMBER").length === 0 && memberList.length === 0 && <p className="text-dim">NO AGENTS REPORTING</p>}
+            {Array.from(new Set([...online.filter((o) => o.role === "MEMBER").map((o) => o.codename), ...memberList.map((m) => m.user_codename)])).map((c) => {
+              const pos = memberList.find((m) => m.user_codename === c);
+              const on = online.some((o) => o.codename === c);
+              return (
+                <div key={c} className="border border-line bg-panel p-3 flex items-center justify-between gap-2">
+                  <div>
+                    <p className={on ? "text-accent" : "text-dim"}>{on ? "●" : "○"} {c}</p>
+                    <p className="text-[10px] text-dim">
+                      {pos ? `${pos.lat.toFixed(5)}, ${pos.lng.toFixed(5)} · ${new Date(pos.updated_at).toLocaleTimeString()}` : "NO GPS FIX"}
+                    </p>
+                  </div>
+                  {pos && (
+                    <button onClick={() => { setLocked(c); pick("radar"); }} className="border border-accent text-accent px-3 py-1">TRACK</button>
+                  )}
+                </div>
+              );
+            })}
+          </div>
         )}
       </main>
       <Ticker quakes={quakes} alert={alert} />

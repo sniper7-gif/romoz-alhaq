@@ -2,12 +2,12 @@
 @import "leaflet/dist/leaflet.css";
 
 :root {
-  --bg: #05080a;
-  --panel: #0b1114;
+  --bg: #000;
+  --panel: rgba(2,10,4,.88);
   --line: #1c2a2e;
-  --fg: #cfe8dc;
-  --dim: #6b8a80;
-  --accent: #39ff88;
+  --fg: #b6ffc9;
+  --dim: #4f8a62;
+  --accent: #00ff41;
   --danger: #ff3b3b;
   --warn: #ffb020;
 }
@@ -21,7 +21,7 @@
   --color-accent: var(--accent);
   --color-danger: var(--danger);
   --color-warn: var(--warn);
-  --font-mono: ui-monospace, "Cascadia Mono", "SF Mono", Menlo, Consolas, monospace;
+  --font-mono: var(--font-jb), ui-monospace, "Cascadia Mono", "SF Mono", Menlo, Consolas, monospace;
 }
 
 html, body { height: 100%; }
@@ -29,9 +29,6 @@ body {
   background: var(--bg);
   color: var(--fg);
   font-family: var(--font-mono);
-  background-image: linear-gradient(rgba(57,255,136,.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(57,255,136,.03) 1px, transparent 1px);
-  background-size: 32px 32px;
 }
 
 .hud-corner { position: absolute; width: 22px; height: 22px; pointer-events: none; z-index: 1000; }
@@ -43,7 +40,7 @@ body {
 .radar-sweep {
   position: absolute; inset: 50% auto auto 50%;
   width: 140vmax; height: 140vmax; margin: -70vmax 0 0 -70vmax;
-  background: conic-gradient(from 0deg, rgba(57,255,136,.28), rgba(57,255,136,0) 18%, rgba(57,255,136,0) 100%);
+  background: conic-gradient(from 0deg, rgba(0,255,65,.28), rgba(0,255,65,0) 18%, rgba(0,255,65,0) 100%);
   border-radius: 50%;
   animation: sweep 5s linear infinite;
   pointer-events: none; z-index: 900; mix-blend-mode: screen;
@@ -55,18 +52,18 @@ body {
   background:
     linear-gradient(var(--accent) 0 0) center / 1px 100% no-repeat,
     linear-gradient(var(--accent) 0 0) center / 100% 1px no-repeat,
-    radial-gradient(circle, transparent 24%, rgba(57,255,136,.25) 24.3%, transparent 24.8%, transparent 49%, rgba(57,255,136,.2) 49.3%, transparent 49.8%, transparent 74%, rgba(57,255,136,.15) 74.3%, transparent 74.8%);
+    radial-gradient(circle, transparent 24%, rgba(0,255,65,.25) 24.3%, transparent 24.8%, transparent 49%, rgba(0,255,65,.2) 49.3%, transparent 49.8%, transparent 74%, rgba(0,255,65,.15) 74.3%, transparent 74.8%);
   opacity: .35;
 }
 
 .pulse-marker {
   width: 16px; height: 16px; border-radius: 50%;
-  background: var(--accent); box-shadow: 0 0 0 0 rgba(57,255,136,.7);
+  background: var(--accent); box-shadow: 0 0 0 0 rgba(0,255,65,.7);
   animation: pulse 1.6s infinite;
 }
 .pulse-marker.admin { background: var(--warn); box-shadow: 0 0 0 0 rgba(255,176,32,.7); }
 .pulse-marker.quake { background: var(--danger); animation-name: pulse-red; }
-@keyframes pulse { 70% { box-shadow: 0 0 0 16px rgba(57,255,136,0); } 100% { box-shadow: 0 0 0 0 rgba(57,255,136,0); } }
+@keyframes pulse { 70% { box-shadow: 0 0 0 16px rgba(0,255,65,0); } 100% { box-shadow: 0 0 0 0 rgba(0,255,65,0); } }
 @keyframes pulse-red { 70% { box-shadow: 0 0 0 18px rgba(255,59,59,0); } 100% { box-shadow: 0 0 0 0 rgba(255,59,59,0); } }
 
 .tx-banner { animation: txflash 1s ease-in-out infinite; }
@@ -79,3 +76,10 @@ body {
 .leaflet-container { background: #05080a; font-family: var(--font-mono); }
 .leaflet-div-icon { background: transparent; border: 0; }
 .leaflet-popup-content-wrapper, .leaflet-popup-tip { background: var(--panel); color: var(--fg); border: 1px solid var(--line); border-radius: 2px; }
+
+.glow { text-shadow: 0 0 6px #00ff41, 0 0 14px rgba(0,255,65,.6); }
+.crt { position: fixed; inset: 0; z-index: 5000; pointer-events: none;
+  background: repeating-linear-gradient(to bottom, rgba(0,0,0,0) 0, rgba(0,0,0,0) 2px, rgba(0,0,0,.22) 3px);
+  box-shadow: inset 0 0 120px rgba(0,0,0,.65); }
+.caret::after { content: "█"; animation: blink 1s steps(1) infinite; }
+@keyframes blink { 50% { opacity: 0; } }

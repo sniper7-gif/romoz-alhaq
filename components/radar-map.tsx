@@ -30,13 +30,16 @@ export default function RadarMap({
   members,
   online,
   quakes,
+  locked,
+  onLock,
 }: {
+  locked: string | null;
+  onLock: (c: string | null) => void;
   members: MemberPos[];
   online: { codename: string }[];
   quakes: Quake[];
 }) {
   const [hud, setHud] = useState(true);
-  const [locked, setLocked] = useState<string | null>(null);
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
     const t = setInterval(() => setNow(Date.now()), 5000);
@@ -45,7 +48,7 @@ export default function RadarMap({
 
   const isOnline = (m: MemberPos) =>
     online.some((o) => o.codename === m.user_codename) || now - new Date(m.updated_at).getTime() < 20000;
-  const target = members.find((m) => m.user_codename === locked);
+  const target = (Array.isArray(members) ? members : []).find((m) => m.user_codename === locked);
 
   return (
     <div className="relative h-full w-full overflow-hidden">
@@ -91,13 +94,13 @@ export default function RadarMap({
           <span className="text-dim tracking-widest">GOD EYES</span>
           <button onClick={() => setHud((h) => !h)} className="border border-line px-2 text-accent">HUD {hud ? "ON" : "OFF"}</button>
         </div>
-        {members.length === 0 && <p className="text-dim">NO TELEMETRY</p>}
-        {members.map((m) => (
+        {(!Array.isArray(members) || members.length === 0) && <p className="text-dim">NO TELEMETRY</p>}
+        {(Array.isArray(members) ? members : []).map((m) => (
           <div key={m.user_codename} className="border-t border-line pt-1">
             <div className="flex justify-between">
               <span className={isOnline(m) ? "text-accent" : "text-dim"}>{isOnline(m) ? "●" : "○"} {m.user_codename}</span>
               <button
-                onClick={() => setLocked(locked === m.user_codename ? null : m.user_codename)}
+                onClick={() => onLock(locked === m.user_codename ? null : m.user_codename)}
                 className={`px-1 border ${locked === m.user_codename ? "border-danger text-danger" : "border-line text-dim"}`}>
                 {locked === m.user_codename ? "UNLOCK" : "LOCK ON"}
               </button>
