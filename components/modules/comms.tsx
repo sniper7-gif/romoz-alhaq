@@ -2,12 +2,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useT } from "@/components/providers";
 import Walkie from "@/components/modules/walkie";
+import TelegramButton from "@/components/telegram";
 import { btnCls, inputCls } from "@/components/ui/modal";
-import { AGENTS, SEED_CHAT, nowHHMM, uid, type ChatMsg } from "@/lib/data";
+import { SEED_CHAT, nowHHMM, uid, type ChatMsg } from "@/lib/data";
 import { usePersisted } from "@/lib/store";
 import type { Take, VoiceFx } from "@/lib/voice";
 
-const REPLIES = ["Copy that.", "Acknowledged. Standing by.", "Message received, over.", "Confirmed. Moving on your signal.", "Roger. Keep channel open."];
 const LEGACY_BARS = [6, 14, 9, 18, 11, 20, 8, 16, 12, 19, 7, 15, 10, 17, 9, 13];
 const BURN_OPTIONS = [
   { secs: 0, label: "Off" },
@@ -107,17 +107,10 @@ export default function CommsModule({ codename }: { codename: string }) {
   const push = useCallback(
     (m: Omit<ChatMsg, "id" | "time">) => {
       const b = burnRef.current;
-      setMsgs((p) => [...p, { ...m, id: uid(), time: nowHHMM(), ...(b ? { burn: b } : {}) }].slice(-200));
+      setMsgs((p) => [...p, { ...m, id: uid(), time: nowHHMM(), ...(b ? { burn: b } : {}) }].slice(-60));
     },
     [setMsgs],
   );
-
-  function replyLater() {
-    const others = AGENTS.filter((a) => a.status === "active" && a.codename !== codename);
-    const from = others[Math.floor(Math.random() * others.length)].codename;
-    const text = REPLIES[Math.floor(Math.random() * REPLIES.length)];
-    timers.current.push(setTimeout(() => push({ from, mine: false, kind: "text", text }), 1200));
-  }
 
   function sendText(e: React.FormEvent) {
     e.preventDefault();
@@ -125,16 +118,12 @@ export default function CommsModule({ codename }: { codename: string }) {
     if (!text) return;
     push({ from: codename, mine: true, kind: "text", text });
     setDraft("");
-    replyLater();
   }
 
   const sendVoice = useCallback(
     (take: Take, fx: VoiceFx) => {
       push({ from: codename, mine: true, kind: "voice", secs: take.secs, audio: take.dataUrl, bars: take.bars, fx });
-      replyLater();
     },
-    // replyLater only closes over stable values (codename) and refs
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [push, codename],
   );
 
@@ -162,6 +151,7 @@ export default function CommsModule({ codename }: { codename: string }) {
     <section className="flex h-[calc(100dvh-9rem)] min-h-96 flex-col border border-line bg-panel">
       <div className="flex items-center justify-between gap-2 border-b border-line px-4 py-2 text-xs">
         <h2 className="glow tracking-widest">{t("tabComms")} · {t("encrypted")}</h2>
+        <TelegramButton compact />
         <button
           type="button"
           aria-pressed={walkie}
@@ -176,13 +166,14 @@ export default function CommsModule({ codename }: { codename: string }) {
 
       <div className="flex-1 space-y-3 overflow-y-auto p-4" role="log" aria-live="polite">
         {msgs.map((m) => {
+          const mine = m.from === codename;
           const left = m.burn && m.burnAt ? m.burnAt + m.burn * 1000 - now : null;
           const burning = left !== null && left <= 0;
           return (
-            <div key={m.id} className={`flex ${m.mine ? "justify-end" : "justify-start"}`}>
-              <div className={`max-w-[80%] border px-3 py-2 text-sm ${burning ? "border-danger/60 bg-danger/10" : m.mine ? "border-accent/60 bg-accent/10" : "border-line bg-black/50"}`}>
+            <div key={m.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
+              <div className={`max-w-[80%] border px-3 py-2 text-sm ${burning ? "border-danger/60 bg-danger/10" : mine ? "border-accent/60 bg-accent/10" : "border-line bg-black/50"}`}>
                 <div className="mb-1 flex gap-3 text-[10px] text-dim" dir="ltr">
-                  <span className={m.mine ? "text-accent" : ""}>{m.from}</span>
+                  <span className={mine ? "text-accent" : ""}>{m.from}</span>
                   <span>{m.time}</span>
                   {left !== null && !burning && <span className="text-warn">🔥 {mmss(left)}</span>}
                   {burning && <span className="text-danger">00:00</span>}

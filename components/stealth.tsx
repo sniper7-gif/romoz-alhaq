@@ -2,7 +2,7 @@
 import { usePathname } from "next/navigation";
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useT } from "@/components/providers";
-import { type DisguiseId, iconUrl, manifestUrl, PROFILES, svgIconUrl } from "@/lib/disguise";
+import { DISGUISE_COOKIE, type DisguiseId, iconUrl, manifestUrl, PROFILES, svgIconUrl } from "@/lib/disguise";
 import { usePersisted } from "@/lib/store";
 
 const EXIT_CODE = "3337=";
@@ -41,9 +41,9 @@ function setTag(tag: "link" | "meta", selector: string, attrs: Record<string, st
 
 function applyDisguise(id: DisguiseId, lang: "ar" | "en") {
   document.title = id === "default" ? HOME_TITLE : PROFILES[id].name[lang];
-  setTag("link", 'link[rel~="icon"]', { rel: "icon", href: svgIconUrl(id), type: id === "default" ? "image/png" : "image/svg+xml" });
-  setTag("link", 'link[rel="apple-touch-icon"]', { rel: "apple-touch-icon", href: iconUrl(id, 180) });
-  setTag("link", 'link[rel="manifest"]', { rel: "manifest", href: manifestUrl(id, lang) });
+  setTag("link", 'link[rel~="icon"]', { rel: "icon", href: svgIconUrl(id), type: PROFILES[id].png ? "image/png" : "image/svg+xml" });
+  setTag("link", 'link[rel="apple-touch-icon"]', { rel: "apple-touch-icon", sizes: "180x180", href: `${iconUrl(id, 180)}&v=2` });
+  setTag("link", 'link[rel="manifest"]', { rel: "manifest", href: manifestUrl(id, lang), crossorigin: "use-credentials" });
   setTag("meta", 'meta[name="theme-color"]', { name: "theme-color", content: PROFILES[id].theme });
 }
 
@@ -57,6 +57,11 @@ export function StealthProvider({ children }: { children: React.ReactNode }) {
   // Re-apply on route change too: Next rewrites <title> when navigating.
   useEffect(() => {
     // The duress decoy page must look like a plain weather/news site, whatever disguise is chosen.
+    try {
+      document.cookie = `${DISGUISE_COOKIE}=${disguise}; path=/; max-age=31536000; samesite=lax`;
+    } catch {
+      /* cookies blocked: the manifest URL still carries the choice */
+    }
     const shown = pathname === "/news" ? "weather" : disguise;
     applyDisguise(shown, lang);
     const raf = requestAnimationFrame(() => applyDisguise(shown, lang));

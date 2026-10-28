@@ -13,7 +13,7 @@ export interface VoiceSession {
 const GHOST_RATIO = 0.68;
 const BAR_COUNT = 16;
 const MIN_SECS = 0.5;
-const MIME = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4"];
+const MIME = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4;codecs=mp4a.40.2", "audio/mp4", "audio/aac", "audio/ogg;codecs=opus"];
 
 // Two-tap delay-line pitch shifter: each tap's read head drifts at `ratio` of real time and is crossfaded with a Hann window.
 const PITCH_WORKLET = `
@@ -71,7 +71,9 @@ function readAsDataUrl(blob: Blob) {
 
 /** Mic -> Web Audio effect chain -> MediaRecorder, so the stored clip is already scrambled. */
 export async function startVoiceSession(fx: VoiceFx): Promise<VoiceSession> {
-  const ctx = new AudioContext();
+  if (typeof MediaRecorder === "undefined" || !navigator.mediaDevices?.getUserMedia) throw new Error("unsupported");
+  const AC = window.AudioContext ?? (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+  const ctx = new AC();
   void ctx.resume();
   let stream: MediaStream;
   try {
@@ -94,13 +96,28 @@ export async function startVoiceSession(fx: VoiceFx): Promise<VoiceSession> {
     mix.connect(analyser);
     analyser.connect(dest);
 
-    if (fx === "ghost") {
-      await ctx.audioWorklet.addModule(URL.createObjectURL(new Blob([PITCH_WORKLET], { type: "text/javascript" })));
-      const shift = new AudioWorkletNode(ctx, "pitch-shift", { processorOptions: { ratio: GHOST_RATIO } });
-      const dark = ctx.createBiquadFilter();
-      dark.type = "lowpass";
-      dark.frequency.value = 2600;
-      src.connect(shift).connect(dark).connect(mix);
+    const dark = ctx.createBiquadFilter();
+    dark.type = "lowpass";
+    dark.frequency.value = 2600;
+    let shifted = false;
+    if (fx === "ghost" && ctx.audioWorklet) {
+      try {
+        await ctx.audioWorklet.addModule(URL.createObjectURL(new Blob([PITCH_WORKLET], { type: "text/javascript" })));
+        const shift = new AudioWorkletNode(ctx, "pitch-shift", { processorOptions: { ratio: GHOST_RATIO } });
+        src.connect(shift).connect(dark).connect(mix);
+        shifted = true;
+      } catch {
+        /* no worklet support: fall back to a dark, low-passed voice */
+      }
+    }
+    if (fx === "ghost" && !shifted) {
+      const deep = ctx.createBiquadFilter();
+      deep.type = "lowshelf";
+      deep.frequency.value = 300;
+      deep.gain.value = 12;
+      src.connect(deep).connect(dark).connect(mix);
+    } else if (fx === "ghost") {
+      /* wired above */
     } else if (fx === "military") {
       const hp = ctx.createBiquadFilter();
       hp.type = "highpass";
@@ -146,8 +163,13 @@ export async function startVoiceSession(fx: VoiceFx): Promise<VoiceSession> {
       osc.stop(at + 0.12);
     };
 
-    const mime = MIME.find((m) => MediaRecorder.isTypeSupported(m));
-    const rec = new MediaRecorder(dest.stream, { ...(mime ? { mimeType: mime } : {}), audioBitsPerSecond: 24000 });
+    const mime = MIME.find((m) => MediaRecorder.isTypeSupported?.(m));
+    let rec: MediaRecorder;
+    try {
+      rec = new MediaRecorder(dest.stream, { ...(mime ? { mimeType: mime } : {}), audioBitsPerSecond: 24000 });
+    } catch {
+      rec = new MediaRecorder(dest.stream);
+    }
     const chunks: Blob[] = [];
     rec.ondataavailable = (e) => e.data.size && chunks.push(e.data);
     const levels: number[] = [];
@@ -160,7 +182,7 @@ export async function startVoiceSession(fx: VoiceFx): Promise<VoiceSession> {
     }, 80);
 
     const started = performance.now();
-    rec.start();
+    rec.start(250);
     beep(ctx.currentTime + 0.02);
     let done = false;
 
@@ -182,6 +204,7 @@ export async function startVoiceSession(fx: VoiceFx): Promise<VoiceSession> {
         await new Promise((r) => setTimeout(r, fx === "military" ? 220 : 80));
         clearInterval(meter);
         const finished = new Promise<void>((r) => (rec.onstop = () => r()));
+        if (rec.state === "recording") rec.requestData();
         rec.stop();
         await finished;
         release();
@@ -194,7 +217,7 @@ export async function startVoiceSession(fx: VoiceFx): Promise<VoiceSession> {
           const v = slice.length ? Math.max(...slice) / peak : 0.2;
           return Math.round(4 + v * 18);
         });
-        return { dataUrl: await readAsDataUrl(new Blob(chunks, { type: rec.mimeType })), secs: Math.max(1, Math.round(secs)), bars };
+        return { dataUrl: await readAsDataUrl(new Blob(chunks, { type: rec.mimeType || mime || "audio/webm" })), secs: Math.max(1, Math.round(secs)), bars };
       },
     };
   } catch (e) {

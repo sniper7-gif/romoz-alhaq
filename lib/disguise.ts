@@ -1,4 +1,4 @@
-export const DISGUISES = ["default", "calculator", "radio", "weather", "notes"] as const;
+export const DISGUISES = ["default", "hood", "calculator", "radio", "weather", "notes"] as const;
 export type DisguiseId = (typeof DISGUISES)[number];
 export type Lang = "ar" | "en";
 
@@ -11,6 +11,7 @@ interface Profile {
 
 export const PROFILES: Record<DisguiseId, Profile> = {
   default: { name: { ar: "رموز الحق / L.I.S", en: "Symbols of Truth / L.I.S" }, theme: "#000000", png: "/logo-eagle.png" },
+  hood: { name: { ar: "رموز الحق - الملثم", en: "Symbols of Truth - Masked Hacker" }, theme: "#000000", png: "/logo-hood.png" },
   calculator: { name: { ar: "الحاسبة", en: "Calculator" }, theme: "#1f2937" },
   radio: { name: { ar: "راديو FM", en: "FM Radio" }, theme: "#7c2d12" },
   weather: { name: { ar: "الطقس", en: "Weather" }, theme: "#0ea5e9" },
@@ -21,14 +22,16 @@ export const isDisguise = (v: unknown): v is DisguiseId => DISGUISES.includes(v 
 export const isLang = (v: unknown): v is Lang => v === "ar" || v === "en";
 
 export const manifestUrl = (id: DisguiseId, lang: Lang) => `/api/manifest?disguise=${id}&lang=${lang}`;
-export const iconUrl = (id: DisguiseId, size: number) => PROFILES[id].png ?? `/api/icon?id=${id}&size=${size}`;
-export const svgIconUrl = (id: DisguiseId) => (id === "default" ? "/logo-eagle.png" : `/api/icon?id=${id}&format=svg`);
+export const DISGUISE_COOKIE = "disguise_mode";
+/** Always a real PNG: raster logos are resized server-side, drawn disguises are rendered from SVG. */
+export const iconUrl = (id: DisguiseId, size: number) => `/api/icon?disguise=${id}&size=${size}`;
+export const svgIconUrl = (id: DisguiseId) => PROFILES[id].png ?? `/api/icon?disguise=${id}&format=svg`;
 
 const frame = (bg: string, art: string) =>
   `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect width="512" height="512" fill="${bg}"/>${art}</svg>`;
 
 /** Art stays inside the central ~70% so maskable crops never clip it. */
-export const ICON_SVG: Record<Exclude<DisguiseId, "default">, string> = {
+export const ICON_SVG: Record<Exclude<DisguiseId, "default" | "hood">, string> = {
   calculator: frame(
     "#1f2937",
     `<rect x="136" y="96" width="240" height="320" rx="28" fill="#374151"/>

@@ -1,6 +1,6 @@
 "use client";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Logo from "@/components/logo";
 import { useT } from "@/components/providers";
 import AgentsModule from "@/components/modules/agents";
@@ -11,15 +11,17 @@ import CommsModule from "@/components/modules/comms";
 import GodEyesModule from "@/components/modules/god-eyes";
 import IntelModule from "@/components/modules/intel";
 import MissionsModule from "@/components/modules/missions";
+import OfflineMapModule from "@/components/modules/offline-map";
 import SettingsModule from "@/components/modules/settings";
+import TelegramButton from "@/components/telegram";
 import { useStealth } from "@/components/stealth";
 import type { Session } from "@/lib/auth";
 import { SEED_ALERTS, type Alert } from "@/lib/data";
 import type { Key } from "@/lib/i18n";
-import { usePersisted } from "@/lib/store";
+import { startSync, usePersisted } from "@/lib/store";
 
 interface Tab {
-  id: "comms" | "command" | "missions" | "intel" | "broadcast" | "agents" | "arsenal" | "eyes" | "settings";
+  id: "comms" | "command" | "missions" | "intel" | "broadcast" | "agents" | "arsenal" | "eyes" | "offline" | "settings";
   label: Key;
   icon: string;
   only?: "OFFICER" | "SOLDIER";
@@ -34,6 +36,7 @@ const TABS: Tab[] = [
   { id: "agents", label: "tabAgents", icon: "☰" },
   { id: "arsenal", label: "tabArsenal", icon: "🛡" },
   { id: "eyes", label: "tabEyes", icon: "◎", only: "SOLDIER" },
+  { id: "offline", label: "tabOffline", icon: "🗺" },
   { id: "settings", label: "tabSettings", icon: "⚙" },
 ];
 
@@ -48,6 +51,8 @@ export default function Dashboard({ session }: { session: Session }) {
   const [drawer, setDrawer] = useState(false);
   const [alerts] = usePersisted<Alert[]>("alerts", SEED_ALERTS);
   const [ack, setAck] = usePersisted("ack", NO_ACK);
+
+  useEffect(() => startSync(), []);
 
   const codename = session.codename;
   const isOfficer = session.role === "OFFICER";
@@ -102,6 +107,7 @@ export default function Dashboard({ session }: { session: Session }) {
       </nav>
 
       <div className="mt-auto space-y-2 border-t border-line pt-3">
+        <TelegramButton />
         <div className="grid grid-cols-2 gap-1" role="group" aria-label={t("language")}>
           {(["en", "ar"] as const).map((l) => (
             <button
@@ -175,6 +181,7 @@ export default function Dashboard({ session }: { session: Session }) {
             {active.id === "agents" && <AgentsModule session={session} codename={codename} />}
             {active.id === "arsenal" && <ArsenalModule />}
             {active.id === "eyes" && <GodEyesModule />}
+            {active.id === "offline" && <OfflineMapModule />}
             {active.id === "settings" && <SettingsModule session={session} codename={codename} />}
           </div>
         </main>

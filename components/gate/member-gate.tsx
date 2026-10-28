@@ -4,7 +4,6 @@ import { useState } from "react";
 import GateShell from "@/components/gate/gate-shell";
 import Logo from "@/components/logo";
 import { useT } from "@/components/providers";
-import { hasAccount, register, verify } from "@/lib/accounts";
 import type { Key } from "@/lib/i18n";
 
 type Mode = "login" | "register";
@@ -29,17 +28,14 @@ export default function MemberGate() {
     setBusy(true);
     setError(null);
     try {
-      if (mode === "register") {
-        if (hasAccount(name)) return setError("codenameTaken");
-        await register(name, password);
-      } else if (!(await verify(name, password))) {
-        return setError("badCredentials");
-      }
       const res = await fetch("/api/auth/member", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ codename: name }),
+        body: JSON.stringify({ codename: name, password, mode }),
       });
+      if (res.status === 409) return setError("codenameTaken");
+      const fail = res.status === 400 || (res.status === 401 && mode === "login") ? ((await res.clone().json().catch(() => null)) as { error?: string } | null)?.error : null;
+      if (fail === "badCredentials" || fail === "badCodename" || fail === "shortPassword") return setError(fail);
       if (res.status === 401) {
         router.replace("/login");
         router.refresh();

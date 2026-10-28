@@ -1,31 +1,19 @@
 "use client";
 import { useState } from "react";
 import { useT } from "@/components/providers";
+import Cameras from "@/components/maps/cameras";
+import TacticalMap from "@/components/maps/tactical-map";
 import OsintHub from "@/components/modules/osint-hub";
 import { btnCls } from "@/components/ui/modal";
 import { SEED_REPORTS, SEED_THREATS, SEVERITIES, SEVERITY_COLOR, type Report, type Threat } from "@/lib/data";
 import { usePersisted } from "@/lib/store";
 
-const KASPERSKY = "https://cybermap.kaspersky.com/en/widget/dynamic/dark";
-
 function LiveMap() {
   const { t } = useT();
-  const [loaded, setLoaded] = useState(false);
   return (
     <div className="border border-accent/40 bg-panel p-3">
       <h3 className="mb-2 text-xs tracking-widest text-dim">{t("liveMap")}</h3>
-      <div className="relative aspect-square max-h-[70dvh] w-full overflow-hidden bg-black sm:aspect-video">
-        {!loaded && <p className="absolute inset-0 grid place-items-center text-xs tracking-widest text-dim">{t("mapLoading")}</p>}
-        <iframe
-          src={KASPERSKY}
-          title={t("liveMap")}
-          loading="lazy"
-          referrerPolicy="no-referrer"
-          sandbox="allow-scripts allow-same-origin allow-popups"
-          onLoad={() => setLoaded(true)}
-          className="absolute inset-0 size-full border-0"
-        />
-      </div>
+      <TacticalMap base="dark" layers={["aircraft", "threats", "bases", "quakes"]} height="h-[28rem]" initial={{ lat: 32.8, lng: 15, zoom: 5 }} />
     </div>
   );
 }
@@ -92,6 +80,7 @@ export default function CommandCenterModule() {
     <section className="space-y-4">
       <h2 className="glow text-sm tracking-widest">{t("tabCommand")}</h2>
       <LiveMap />
+      <Cameras />
       <AiAnalyzer />
       <OsintHub />
     </section>

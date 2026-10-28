@@ -3,7 +3,7 @@ import { useMemo, useState } from "react";
 import { useT } from "@/components/providers";
 import { inputCls } from "@/components/ui/modal";
 import type { Session } from "@/lib/auth";
-import { AGENTS, type Agent } from "@/lib/data";
+import { AGENTS, isImageAvatar, type Agent } from "@/lib/data";
 import { useProfile } from "@/lib/profile";
 
 const STATUS_COLOR = { active: "#00ff41", standby: "#ffb020", offline: "#4f8a62" } as const;
@@ -47,7 +47,7 @@ export default function AgentsModule({ session, codename }: { session: Session; 
                 className="flex w-full items-center gap-3 p-4 text-start hover:bg-accent/5"
               >
                 <span className="grid size-10 place-items-center border border-accent/40 bg-black text-xl" aria-hidden>
-                  {a.me ? profile.avatar : a.role === "OFFICER" ? "🦅" : "🕶️"}
+                  {a.me ? (isImageAvatar(profile.avatar) ? <img alt="" src={profile.avatar} className="size-full object-cover" /> : profile.avatar) : a.role === "OFFICER" ? "🦅" : "🕶️"}
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-sm text-accent" dir="ltr">

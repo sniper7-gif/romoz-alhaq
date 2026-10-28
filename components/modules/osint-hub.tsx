@@ -2,6 +2,8 @@
 import { useEffect, useRef, useState } from "react";
 import { useT } from "@/components/providers";
 import { btnCls } from "@/components/ui/modal";
+import FeedPanel from "@/components/maps/feed-panel";
+import TacticalMap from "@/components/maps/tactical-map";
 import type { Key } from "@/lib/i18n";
 
 interface Node {
@@ -10,16 +12,17 @@ interface Node {
   desc: Key;
   url: string;
   icon: string;
-  repo?: string;
+  /** In-app view: native components, or an embed-friendly iframe URL. */
+  view: "eye" | "air" | "world" | "cyber" | { embed: string };
 }
 
 const NODES: Node[] = [
-  { id: "eye", title: "osintEye", desc: "osintEyeDesc", url: "https://maptheworld.ai/", icon: "🛰️", repo: "https://github.com/bilawalsidhu/gods-eye-view" },
-  { id: "monitor", title: "osintMonitor", desc: "osintMonitorDesc", url: "https://worldmonitor.app/", icon: "🌐" },
-  { id: "air", title: "osintAir", desc: "osintAirDesc", url: "https://globe.adsbexchange.com/", icon: "✈️" },
-  { id: "sea", title: "osintSea", desc: "osintSeaDesc", url: "https://www.marinetraffic.com/", icon: "🚢" },
-  { id: "net", title: "osintNet", desc: "osintNetDesc", url: "https://radar.cloudflare.com/", icon: "📡" },
-  { id: "wx", title: "osintWx", desc: "osintWxDesc", url: "https://embed.windy.com/?27.0,17.0,5", icon: "🌪️" },
+  { id: "eye", title: "osintEye", desc: "osintEyeDesc", url: "https://maptheworld.ai/", icon: "🛰️", view: "eye" },
+  { id: "monitor", title: "osintMonitor", desc: "osintMonitorDesc", url: "https://worldmonitor.app/", icon: "🌐", view: "world" },
+  { id: "air", title: "osintAir", desc: "osintAirDesc", url: "https://globe.adsbexchange.com/", icon: "✈️", view: "air" },
+  { id: "sea", title: "osintSea", desc: "osintSeaDesc", url: "https://www.marinetraffic.com/", icon: "🚢", view: { embed: "https://www.vesselfinder.com/aismap?zoom=5&lat=32.8&lon=15.0" } },
+  { id: "net", title: "osintNet", desc: "osintNetDesc", url: "https://radar.cloudflare.com/", icon: "📡", view: "cyber" },
+  { id: "wx", title: "osintWx", desc: "osintWxDesc", url: "https://embed.windy.com/embed2.html?lat=28.0&lon=17.0&zoom=5&overlay=wind", icon: "🌪️", view: { embed: "https://embed.windy.com/embed2.html?lat=28.0&lon=17.0&zoom=5&overlay=wind" } },
 ];
 
 const SLOW_MS = 9000;
@@ -60,21 +63,31 @@ function Hud({ node, onClose }: { node: Node; onClose: () => void }) {
           ✕
         </button>
       </div>
-      <div className="relative min-h-0 flex-1">
-        <iframe
-          src={node.url}
-          title={t(node.title)}
-          allowFullScreen
-          referrerPolicy="no-referrer"
-          sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox"
-          onLoad={() => setLoaded(true)}
-          className="absolute inset-0 size-full bg-black"
-        />
-        {!loaded && (
-          <div className="pointer-events-none absolute inset-x-0 top-0 p-3 text-center text-xs tracking-widest text-dim">{t("hudLoading")}</div>
-        )}
-      </div>
-      {slow && (
+      {typeof node.view === "string" ? (
+        <div className="relative min-h-[26rem] flex-1">
+          {node.view === "eye" && (
+            <div className="p-2"><TacticalMap base="sat" layers={[]} height="h-[30rem]" searchable initial={{ lat: 32.8872, lng: 13.1913, zoom: 11 }} /></div>
+          )}
+          {node.view === "air" && (
+            <div className="p-2"><TacticalMap base="dark" layers={["aircraft", "bases"]} height="h-[30rem]" initial={{ lat: 32.8, lng: 15, zoom: 6 }} /></div>
+          )}
+          {(node.view === "world" || node.view === "cyber") && <FeedPanel kind={node.view} />}
+        </div>
+      ) : (
+        <div className="relative min-h-0 flex-1">
+          <iframe
+            src={node.view.embed}
+            title={t(node.title)}
+            allowFullScreen
+            referrerPolicy="no-referrer"
+            sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+            onLoad={() => setLoaded(true)}
+            className="absolute inset-0 size-full bg-black"
+          />
+          {!loaded && <div className="pointer-events-none absolute inset-x-0 top-0 p-3 text-center text-xs tracking-widest text-dim">{t("hudLoading")}</div>}
+        </div>
+      )}
+      {slow && typeof node.view !== "string" && !loaded && (
         <div role="status" className="flex flex-wrap items-center gap-3 border-t border-warn/60 bg-warn/10 px-3 py-2 text-xs text-warn">
           <span className="min-w-0 flex-1">{t("hudBlocked")}</span>
           <button type="button" onClick={() => openExternal(node.url)} className={btnCls}>
@@ -113,11 +126,6 @@ export default function OsintHub() {
                 {t("osintExternal")}
               </button>
             </div>
-            {n.repo && (
-              <a href={n.repo} target="_blank" rel="noopener noreferrer" className="text-[11px] text-dim underline hover:text-accent" dir="ltr">
-                GitHub · gods-eye-view
-              </a>
-            )}
           </article>
         ))}
       </div>

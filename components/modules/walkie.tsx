@@ -62,6 +62,8 @@ export default function Walkie({ onSend }: { onSend: (take: Take, fx: VoiceFx) =
   const [err, setErr] = useState("");
   const session = useRef<VoiceSession | null>(null);
   const holding = useRef(false);
+  const downAt = useRef(0);
+  const latched = useRef(false);
   const fxRef = useRef(fx);
   const onSendRef = useRef(onSend);
   const errRef = useRef("");
@@ -75,6 +77,7 @@ export default function Walkie({ onSend }: { onSend: (take: Take, fx: VoiceFx) =
 
   const release = useCallback(async () => {
     holding.current = false;
+    latched.current = false;
     const s = session.current;
     session.current = null;
     if (clock.current) clearInterval(clock.current);
@@ -168,10 +171,23 @@ export default function Walkie({ onSend }: { onSend: (take: Take, fx: VoiceFx) =
           type="button"
           onPointerDown={(e) => {
             e.currentTarget.setPointerCapture(e.pointerId);
+            if (latched.current) return;
+            downAt.current = Date.now();
             void press();
           }}
-          onPointerUp={() => void release()}
-          onPointerCancel={() => void release()}
+          onPointerUp={() => {
+            // A quick tap latches the transmitter on (click-to-talk); the next tap, or a long hold's release, ends it.
+            if (latched.current) {
+              latched.current = false;
+              return void release();
+            }
+            if (Date.now() - downAt.current < 350) latched.current = true;
+            else void release();
+          }}
+          onPointerCancel={() => {
+            latched.current = false;
+            void release();
+          }}
           onContextMenu={(e) => e.preventDefault()}
           aria-label={t("holdToTalk")}
           title={t("holdToTalk")}

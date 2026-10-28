@@ -50,11 +50,19 @@ export interface Profile {
   avatar: string;
   bio: string;
 }
+export type ProxyType = "socks5" | "socks4" | "http" | "https" | "shadowsocks" | "tor";
 export interface ProxyConfig {
   enabled: boolean;
-  type: "http" | "https" | "socks5";
+  type: ProxyType;
   host: string;
   port: string;
+  endpoint: string;
+  username: string;
+  password: string;
+  doh: "1.1.1.1" | "9.9.9.9" | "custom";
+  dohCustom: string;
+  killSwitch: boolean;
+  autoRotate: boolean;
 }
 
 export const SEVERITIES: Severity[] = ["critical", "high", "medium", "low"];
@@ -65,10 +73,39 @@ export const SEVERITY_COLOR: Record<Severity, string> = {
   low: "#00ff41",
 };
 
-export const AVATARS = ["🦅", "🕶️", "🛰️", "🧠", "💀", "🐺", "🎯", "⚡"];
+/** Image avatars start with "/" or "data:image/"; the rest are emoji glyphs. */
+export const AVATARS: { v: string; label: string }[] = [
+  { v: "/logo-hood.png", label: "Masked Hacker" },
+  { v: "/logo-eagle.png", label: "Eagle" },
+  { v: "💀", label: "Ghost Skull" },
+  { v: "🎯", label: "Sniper" },
+  { v: "🥷", label: "Cyber Ninja" },
+  { v: "🎭", label: "Anonymous" },
+  { v: "🐦‍⬛", label: "Raven" },
+  { v: "👁️", label: "Night Vision" },
+  { v: "🐺", label: "Wolf" },
+  { v: "🧠", label: "AI Core" },
+  { v: "☣️", label: "Biohazard" },
+  { v: "🛰️", label: "Satellite" },
+  { v: "⚡", label: "Voltage" },
+  { v: "🕶️", label: "Agent" },
+];
+export const isImageAvatar = (a: string) => a.startsWith("/") || a.startsWith("data:image/");
 
 export const EMPTY_PROFILE: Profile = { avatar: "🦅", bio: "" };
-export const DEFAULT_PROXY: ProxyConfig = { enabled: false, type: "socks5", host: "", port: "" };
+export const DEFAULT_PROXY: ProxyConfig = {
+  enabled: false,
+  type: "socks5",
+  host: "",
+  port: "",
+  endpoint: "",
+  username: "",
+  password: "",
+  doh: "1.1.1.1",
+  dohCustom: "",
+  killSwitch: false,
+  autoRotate: false,
+};
 
 export const SEED_CHAT: ChatMsg[] = [
   { id: "c1", from: "EAGLE-1", mine: false, kind: "text", text: "Channel secured. All units report.", time: "09:02" },

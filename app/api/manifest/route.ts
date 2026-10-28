@@ -1,12 +1,15 @@
-import { iconUrl, isDisguise, isLang, PROFILES } from "@/lib/disguise";
+import { DISGUISE_COOKIE, iconUrl, isDisguise, isLang, PROFILES } from "@/lib/disguise";
 
 export function GET(req: Request) {
   const q = new URL(req.url).searchParams;
-  const id = isDisguise(q.get("disguise")) ? (q.get("disguise") as keyof typeof PROFILES) : "default";
+  // Query param wins; the cookie covers a bare /api/manifest request.
+  const fromCookie = req.headers.get("cookie")?.match(new RegExp(`(?:^|; )${DISGUISE_COOKIE}=([^;]+)`))?.[1];
+  const pick = q.get("disguise") ?? fromCookie;
+  const id = isDisguise(pick) ? pick : "default";
   const lang = isLang(q.get("lang")) ? (q.get("lang") as "ar" | "en") : "ar";
   const p = PROFILES[id];
   const name = p.name[lang];
-  const icon = (size: number, purpose: string) => ({ src: iconUrl(id, size), sizes: `${size}x${size}`, type: "image/png", purpose });
+  const icon = (size: number, purpose: string) => ({ src: `${iconUrl(id, size)}&v=2`, sizes: `${size}x${size}`, type: "image/png", purpose });
 
   return Response.json(
     {
