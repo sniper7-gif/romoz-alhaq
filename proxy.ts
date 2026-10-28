@@ -3,7 +3,7 @@ import { COOKIE_NAME, verifyToken } from "@/lib/auth";
 
 // Gate 1 = access code (session with empty codename). Gate 2 = member login (full session).
 const OPEN = ["/login", "/api/auth/gate", "/api/auth/logout"];
-const PUBLIC = ["/api/manifest", "/api/icon"];
+const PUBLIC = ["/api/manifest", "/api/icon", "/news"];
 const GATE2 = ["/login/member", "/api/auth/member"];
 
 export async function proxy(req: NextRequest) {

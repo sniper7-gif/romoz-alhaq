@@ -7,6 +7,13 @@ export interface ChatMsg {
   kind: "text" | "voice";
   text?: string;
   secs?: number;
+  /** Recorded clip as a data URL; legacy voice messages have none. */
+  audio?: string;
+  bars?: number[];
+  fx?: "normal" | "ghost" | "military";
+  /** Burn-after-reading: lifetime in seconds, counted from when the message was first viewed (`burnAt`). */
+  burn?: number;
+  burnAt?: number;
   time: string;
 }
 export interface Report {

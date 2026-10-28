@@ -19,6 +19,8 @@ const secret = () => {
 };
 
 const PASSCODES: Record<string, Role> = { "77777773": "OFFICER", "3337": "SOLDIER" };
+/** Silent duress code: wipes local data and opens the decoy. Never reveals itself as a failed login. */
+export const DURESS_CODE = "7777777";
 export const roleForPasscode = (raw: string): Role | null => PASSCODES[raw.trim()] ?? null;
 
 export async function signSession(s: Session) {

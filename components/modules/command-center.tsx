@@ -1,12 +1,12 @@
 "use client";
 import { useState } from "react";
 import { useT } from "@/components/providers";
+import OsintHub from "@/components/modules/osint-hub";
 import { btnCls } from "@/components/ui/modal";
 import { SEED_REPORTS, SEED_THREATS, SEVERITIES, SEVERITY_COLOR, type Report, type Threat } from "@/lib/data";
 import { usePersisted } from "@/lib/store";
 
 const KASPERSKY = "https://cybermap.kaspersky.com/en/widget/dynamic/dark";
-const WORLD_MONITOR = "https://worldmonitor.app";
 
 function LiveMap() {
   const { t } = useT();
@@ -86,33 +86,14 @@ function AiAnalyzer() {
   );
 }
 
-function RavenGhostTool() {
-  const { t } = useT();
-  return (
-    <div className="space-y-3 border border-danger/50 bg-panel p-4">
-      <h3 className="glow text-sm tracking-widest">{t("ghostTool")}</h3>
-      <p className="text-xs text-dim" dir="ltr">{t("ghostDesc")}</p>
-      <button
-        type="button"
-        onClick={() => window.open(WORLD_MONITOR, "_blank", "noopener,noreferrer")}
-        className={`${btnCls} border-danger text-danger hover:bg-danger/10`}
-      >
-        {t("launchBridge")}
-      </button>
-    </div>
-  );
-}
-
 export default function CommandCenterModule() {
   const { t } = useT();
   return (
     <section className="space-y-4">
       <h2 className="glow text-sm tracking-widest">{t("tabCommand")}</h2>
       <LiveMap />
-      <div className="grid gap-4 md:grid-cols-2">
-        <AiAnalyzer />
-        <RavenGhostTool />
-      </div>
+      <AiAnalyzer />
+      <OsintHub />
     </section>
   );
 }

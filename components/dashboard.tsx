@@ -4,6 +4,7 @@ import { useState } from "react";
 import Logo from "@/components/logo";
 import { useT } from "@/components/providers";
 import AgentsModule from "@/components/modules/agents";
+import ArsenalModule from "@/components/modules/arsenal";
 import BroadcastModule from "@/components/modules/broadcast";
 import CommandCenterModule from "@/components/modules/command-center";
 import CommsModule from "@/components/modules/comms";
@@ -18,7 +19,7 @@ import type { Key } from "@/lib/i18n";
 import { usePersisted } from "@/lib/store";
 
 interface Tab {
-  id: "comms" | "command" | "missions" | "intel" | "broadcast" | "agents" | "eyes" | "settings";
+  id: "comms" | "command" | "missions" | "intel" | "broadcast" | "agents" | "arsenal" | "eyes" | "settings";
   label: Key;
   icon: string;
   only?: "OFFICER" | "SOLDIER";
@@ -31,6 +32,7 @@ const TABS: Tab[] = [
   { id: "intel", label: "tabIntel", icon: "▤" },
   { id: "broadcast", label: "tabBroadcast", icon: "⚠" },
   { id: "agents", label: "tabAgents", icon: "☰" },
+  { id: "arsenal", label: "tabArsenal", icon: "🛡" },
   { id: "eyes", label: "tabEyes", icon: "◎", only: "SOLDIER" },
   { id: "settings", label: "tabSettings", icon: "⚙" },
 ];
@@ -171,6 +173,7 @@ export default function Dashboard({ session }: { session: Session }) {
             {active.id === "intel" && <IntelModule codename={codename} isOfficer={isOfficer} />}
             {active.id === "broadcast" && <BroadcastModule codename={codename} isOfficer={isOfficer} />}
             {active.id === "agents" && <AgentsModule session={session} codename={codename} />}
+            {active.id === "arsenal" && <ArsenalModule />}
             {active.id === "eyes" && <GodEyesModule />}
             {active.id === "settings" && <SettingsModule session={session} codename={codename} />}
           </div>

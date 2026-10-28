@@ -56,8 +56,10 @@ export function StealthProvider({ children }: { children: React.ReactNode }) {
 
   // Re-apply on route change too: Next rewrites <title> when navigating.
   useEffect(() => {
-    applyDisguise(disguise, lang);
-    const raf = requestAnimationFrame(() => applyDisguise(disguise, lang));
+    // The duress decoy page must look like a plain weather/news site, whatever disguise is chosen.
+    const shown = pathname === "/news" ? "weather" : disguise;
+    applyDisguise(shown, lang);
+    const raf = requestAnimationFrame(() => applyDisguise(shown, lang));
     return () => cancelAnimationFrame(raf);
   }, [disguise, lang, pathname]);
 

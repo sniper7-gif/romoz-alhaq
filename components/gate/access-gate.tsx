@@ -4,6 +4,7 @@ import { useState } from "react";
 import GateShell from "@/components/gate/gate-shell";
 import Logo from "@/components/logo";
 import { useT } from "@/components/providers";
+import { wipeSensitiveData } from "@/lib/wipe";
 
 type Phase = "idle" | "busy" | "denied" | "error" | "granted";
 
@@ -30,6 +31,13 @@ export default function AccessGate() {
         return;
       }
       if (!res.ok) throw new Error();
+      const body = (await res.json().catch(() => null)) as { duress?: boolean } | null;
+      if (body?.duress) {
+        // Hard navigation, so the in-memory store cache is dropped along with localStorage.
+        wipeSensitiveData();
+        window.location.replace("/news");
+        return;
+      }
       setPhase("granted");
       setTimeout(() => {
         router.replace("/login/member");
