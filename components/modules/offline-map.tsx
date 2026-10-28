@@ -16,7 +16,7 @@ interface Pin {
 }
 
 const TILE_CACHE = "rah-tiles-v1";
-const TILE_URL = (z: number, x: number, y: number) => `https://a.basemaps.cartocdn.com/dark_all/${z}/${x}/${y}.png`;
+const TILE_URL = (z: number, x: number, y: number) => `/api/tiles/dark/${z}/${x}/${y}`;
 const BBOX = { s: 19, n: 33.6, w: 9, e: 25.6 };
 const MIN_Z = 5;
 const MAX_Z = 8;
@@ -66,7 +66,7 @@ async function cachedTile(url: string) {
   const cache = await caches.open(TILE_CACHE);
   let res = await cache.match(url);
   if (!res) {
-    res = await fetch(url, { mode: "cors" });
+    res = await fetch(url);
     if (!res.ok) throw new Error(String(res.status));
     await cache.put(url, res.clone());
   }
@@ -255,7 +255,7 @@ export default function OfflineMapModule() {
         urls.slice(i, i + 6).map(async (u) => {
           try {
             if (!(await cache.match(u))) {
-              const r = await fetch(u, { mode: "cors" });
+              const r = await fetch(u);
               if (r.ok) await cache.put(u, r);
             }
           } catch {

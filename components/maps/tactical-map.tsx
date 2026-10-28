@@ -42,11 +42,11 @@ const BASES: [string, number, number][] = [
   ["Djibouti · Lemonnier", 11.55, 43.15],
 ];
 
+// Same-origin relay (/api/tiles): key-less CARTO / OSM / Esri sources with automatic fallback.
 const TILES = {
-  dark: { url: "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", attr: "© OpenStreetMap · © CARTO", max: 19 },
-  sat: { url: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", attr: "Esri · Maxar · Earthstar", max: 19 },
+  dark: { url: "/api/tiles/dark/{z}/{x}/{y}", attr: "© OpenStreetMap · © CARTO", max: 18 },
+  sat: { url: "/api/tiles/sat/{z}/{x}/{y}", attr: "Esri · Maxar · Earthstar", max: 18 },
 } as const;
-const LABELS = "https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}";
 
 const LAYER_LABEL: Record<LayerId, { ar: string; en: string }> = {
   aircraft: { ar: "الطائرات المباشرة", en: "Live Aircraft" },
@@ -98,8 +98,7 @@ export default function TacticalMap({
       lib.current = Lf;
       map = Lf.map(box.current, { center: [initial.lat, initial.lng], zoom: initial.zoom, zoomControl: true, worldCopyJump: true, attributionControl: true });
       const t = TILES[base];
-      Lf.tileLayer(t.url, { attribution: t.attr, maxZoom: t.max, subdomains: "abcd" }).addTo(map);
-      if (base === "sat") Lf.tileLayer(LABELS, { maxZoom: 19, opacity: 0.9 }).addTo(map);
+      Lf.tileLayer(t.url, { attribution: t.attr, maxZoom: t.max }).addTo(map);
       for (const id of ["bases", "threats", "quakes", "aircraft"] as LayerId[]) groups.current[id] = Lf.layerGroup().addTo(map);
       map.on("mousemove", (e) => setHud((h) => ({ ...h, lat: e.latlng.lat, lng: e.latlng.lng })));
       map.on("zoomend", () => setHud((h) => ({ ...h, zoom: map!.getZoom() })));
