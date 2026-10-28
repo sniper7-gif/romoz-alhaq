@@ -11,6 +11,7 @@ import GodEyesModule from "@/components/modules/god-eyes";
 import IntelModule from "@/components/modules/intel";
 import MissionsModule from "@/components/modules/missions";
 import SettingsModule from "@/components/modules/settings";
+import { useStealth } from "@/components/stealth";
 import type { Session } from "@/lib/auth";
 import { SEED_ALERTS, type Alert } from "@/lib/data";
 import type { Key } from "@/lib/i18n";
@@ -39,6 +40,7 @@ const NO_ACK = "";
 export default function Dashboard({ session }: { session: Session }) {
   const { t, lang, setLang } = useT();
   const router = useRouter();
+  const { setDecoy } = useStealth();
   const [leaving, setLeaving] = useState(false);
   const [tab, setTab] = useState<Tab["id"]>("comms");
   const [drawer, setDrawer] = useState(false);
@@ -111,6 +113,9 @@ export default function Dashboard({ session }: { session: Session }) {
             </button>
           ))}
         </div>
+        <button type="button" onClick={() => setDecoy(true)} className="w-full border border-line py-2 text-xs text-dim hover:border-accent/50 hover:text-fg">
+          {t("decoyNow")}
+        </button>
         <button
           type="button"
           onClick={logout}

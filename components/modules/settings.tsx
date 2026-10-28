@@ -4,8 +4,11 @@ import { useEffect, useRef, useState } from "react";
 import { useT } from "@/components/providers";
 import Modal, { btnCls, inputCls } from "@/components/ui/modal";
 import type { Session } from "@/lib/auth";
+import type { Key } from "@/lib/i18n";
 import { AVATARS, DEFAULT_PROXY, type ProxyConfig } from "@/lib/data";
 import { useProfile } from "@/lib/profile";
+import { useStealth, type InstallResult } from "@/components/stealth";
+import { DISGUISES, PROFILES, svgIconUrl, type DisguiseId } from "@/lib/disguise";
 import { usePersisted } from "@/lib/store";
 
 const MAX_AVATAR_BYTES = 150_000;
@@ -157,6 +160,63 @@ function ProxyPanel() {
   );
 }
 
+const DISGUISE_LABEL = {
+  default: "disguiseDefault",
+  calculator: "disguiseCalculator",
+  radio: "disguiseRadio",
+  weather: "disguiseWeather",
+  notes: "disguiseNotes",
+} as const satisfies Record<DisguiseId, Key>;
+
+const INSTALL_MSG = {
+  accepted: "installAccepted",
+  dismissed: "installDismissed",
+  ios: "installIos",
+  installed: "installDone",
+  manual: "installManual",
+} as const satisfies Record<InstallResult, Key>;
+
+function StealthPanel() {
+  const { t } = useT();
+  const { disguise, setDisguise, setDecoy, install } = useStealth();
+  const [msg, setMsg] = useState<Key | null>(null);
+
+  return (
+    <div className="space-y-3 border border-line bg-panel p-4">
+      <h3 className="text-xs tracking-widest text-dim">{t("disguiseTitle")}</h3>
+      <p className="text-xs text-dim">{t("disguiseHint")}</p>
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-5" role="group" aria-label={t("disguiseTitle")}>
+        {DISGUISES.map((id) => (
+          <button
+            key={id}
+            type="button"
+            onClick={() => {
+              setDisguise(id);
+              setMsg(null);
+            }}
+            aria-pressed={disguise === id}
+            className={`flex flex-col items-center gap-2 border p-3 text-xs ${disguise === id ? "border-accent bg-accent/10 text-accent" : "border-line text-dim hover:border-accent/50"}`}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={svgIconUrl(id)} alt="" width={48} height={48} className="size-12 rounded-lg" style={{ background: PROFILES[id].theme }} />
+            {t(DISGUISE_LABEL[id])}
+          </button>
+        ))}
+      </div>
+      <div className="flex flex-wrap items-center gap-2">
+        <button type="button" onClick={async () => setMsg(INSTALL_MSG[await install()])} className={btnCls}>
+          {t("installBtn")}
+        </button>
+        <button type="button" onClick={() => setDecoy(true)} className={btnCls}>
+          {t("decoyNow")}
+        </button>
+      </div>
+      {msg && <p role="status" className="text-xs text-accent">{t(msg)}</p>}
+      <p className="text-[11px] text-dim">{t("decoyHint")}</p>
+    </div>
+  );
+}
+
 export default function SettingsModule({ session, codename }: { session: Session; codename: string }) {
   const { t, lang, setLang } = useT();
   const router = useRouter();
@@ -192,6 +252,8 @@ export default function SettingsModule({ session, codename }: { session: Session
       </div>
 
       <ProxyPanel />
+
+      <StealthPanel />
 
       <div className="flex items-center justify-between border border-line bg-panel p-4">
         <span className="text-sm">{t("language")}</span>
